@@ -24,6 +24,15 @@ function App() {
   
   // Load products from Supabase on mount
   useEffect(() => {
+    // Clean up old local storage keys to prevent QuotaExceededError from large base64 images
+    try {
+      localStorage.removeItem('wbs_products');
+      localStorage.removeItem('wbs_products_v2');
+      localStorage.removeItem('wbs_products_supabase');
+    } catch (e) {
+      console.warn('Failed to clear old localStorage keys:', e);
+    }
+
     async function loadProducts() {
       try {
         const { data, error } = await supabase
@@ -40,15 +49,6 @@ function App() {
         }
       } catch (e) {
         console.error('Error loading products from Supabase:', e);
-        // Fallback to local storage backup if off-line
-        const saved = localStorage.getItem('wbs_products_supabase');
-        if (saved) {
-          try {
-            setProducts(JSON.parse(saved));
-          } catch (err) {
-            setProducts([]);
-          }
-        }
       } finally {
         setLoading(false);
       }
@@ -102,12 +102,6 @@ function App() {
         if (error) throw error;
         setProducts(prev => [...prev, product]);
       }
-      
-      // Sync local storage backup
-      const updated = exists 
-        ? products.map(p => p.id === product.id ? product : p)
-        : [...products, product];
-      localStorage.setItem('wbs_products_supabase', JSON.stringify(updated));
     } catch (e) {
       console.error('Error saving product to Supabase:', e.message);
       alert('Error al guardar en la base de datos: ' + e.message);
@@ -128,9 +122,6 @@ function App() {
       if (error) throw error;
       setProducts(prev => prev.filter(p => p.id !== id));
       
-      const updated = products.filter(p => p.id !== id);
-      localStorage.setItem('wbs_products_supabase', JSON.stringify(updated));
-
       // Undo logic configuration
       setRecentlyDeleted(productToDelete);
       if (undoTimer) clearTimeout(undoTimer);
@@ -164,10 +155,6 @@ function App() {
 
       setProducts(prev => [...prev, recentlyDeleted].sort((a, b) => a.name.localeCompare(b.name)));
       
-      // Update local storage backup
-      const updated = [...products, recentlyDeleted];
-      localStorage.setItem('wbs_products_supabase', JSON.stringify(updated));
-
       setRecentlyDeleted(null);
       if (undoTimer) clearTimeout(undoTimer);
     } catch (e) {
@@ -205,7 +192,6 @@ function App() {
       }
 
       setProducts(backupProducts);
-      localStorage.setItem('wbs_products_supabase', JSON.stringify(backupProducts));
       alert('Catálogo restablecido con éxito.');
     } catch (e) {
       console.error('Error resetting catalog in Supabase:', e.message);
