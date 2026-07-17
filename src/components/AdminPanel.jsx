@@ -217,11 +217,11 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 100 }}
         >
-          <div className="admin-login-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
-            <div>
-              <h2 style={{ margin: 0 }}>WORLD BUSINESS SERVICES</h2>
-              <span>Gestor de Catálogo Individual</span>
+          <div className="admin-login-header" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '55px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }} />
+            <div style={{ textAlign: 'left' }}>
+              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>WORLD BUSINESS SERVICES</h2>
+              <span style={{ fontSize: '0.75rem' }}>Gestor de Catálogo Individual</span>
             </div>
           </div>
           
@@ -270,8 +270,8 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
     <div className="admin-dashboard-container">
       <header className="admin-dashboard-header">
         <div className="container header-flex">
-          <div className="admin-header-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+          <div className="admin-header-title" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.75rem' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '45px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }} />
             <div>
               <h2>Panel de Administración del Catálogo</h2>
               <span>WORLD BUSINESS SERVICES S.A.S.</span>

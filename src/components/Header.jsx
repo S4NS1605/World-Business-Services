@@ -45,8 +45,8 @@ export default function Header({ onNavigate }) {
     >
       <div className="container nav-container">
         {/* Brand/Logo */}
-        <a href="#inicio" onClick={(e) => handleScrollTo(e, 'inicio')} className="nav-logo" id="header-logo-link" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-          <img src={logoEmpresa} alt="WBS Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} />
+        <a href="#inicio" onClick={(e) => handleScrollTo(e, 'inicio')} className="nav-logo" id="header-logo-link" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+          <img src={logoEmpresa} alt="WBS Logo" style={{ height: '52px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }} />
           <div>
             <h1>WORLD BUSINESS SERVICES</h1>
             <span>Mundo de negocios a su servicio</span>

@@ -63,8 +63,8 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
       {/* Navbar for SPA Navigation */}
       <nav className="catalog-navbar">
         <div className="container catalog-navbar-flex">
-          <a href="#inicio" onClick={(e) => { e.preventDefault(); onNavigateHome(); }} className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+          <a href="#inicio" onClick={(e) => { e.preventDefault(); onNavigateHome(); }} className="nav-logo" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '50px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }} />
             <div>
               <h1>WORLD BUSINESS SERVICES</h1>
               <span>Mundo de negocios a su servicio</span>

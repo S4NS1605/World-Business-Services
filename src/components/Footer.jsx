@@ -25,8 +25,8 @@ export default function Footer() {
         <div className="footer-grid">
           {/* Column 1: Company Logo and Description */}
           <div className="footer-column">
-            <div className="footer-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-              <img src={logoEmpresa} alt="WBS Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain', filter: 'brightness(1.1)' }} />
+            <div className="footer-logo" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <img src={logoEmpresa} alt="WBS Logo" style={{ height: '50px', width: 'auto', objectFit: 'contain', borderRadius: '4px', filter: 'brightness(1.1)' }} />
               <div>
                 <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-white)', margin: 0, lineHeight: 1.2 }}>WORLD BUSINESS SERVICES</h2>
                 <span style={{ fontSize: '0.65rem', color: 'var(--secondary-color)', fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>Mundo de negocios a su servicio</span>
