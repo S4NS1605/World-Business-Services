@@ -100,13 +100,13 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
 
       {/* Header Banner */}
       <section className="catalog-hero">
-        <div className="container">
+        <div className="container catalog-hero-content">
           <h2>Catálogo de Equipamiento Médico</h2>
-          <p>Explore nuestro portafolio completo de tecnología médica certificada por el INVIMA. Todo el catálogo es de carácter informativo.</p>
+          <p style={{ marginBottom: '2rem' }}>Explore nuestro portafolio completo de tecnología médica certificada por el INVIMA. Todo el catálogo es de carácter informativo.</p>
           
           {/* Interactive Search Bar */}
-          <div className="catalog-search-box">
-            <Search className="search-icon" size={20} />
+          <div className="catalog-search-bar" style={{ maxWidth: '650px', marginBottom: '2.5rem' }}>
+            <Search className="catalog-search-icon" size={20} />
             <input
               type="text"
               value={searchQuery}
