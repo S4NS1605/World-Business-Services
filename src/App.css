@@ -1027,7 +1027,7 @@
 
 .catalog-results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2.5rem;
 }
 
@@ -1182,5 +1182,80 @@
 
 .catalog-no-results p {
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   8. RESPONSIVE FIXES FOR NAVIGATION HEADERS & CATALOG
+   ========================================================================== */
+@media (max-width: 768px) {
+  .nav-logo h1 {
+    font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Global viewport overflow protection */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  /* Header Brand Responsiveness */
+  .nav-logo h1 {
+    font-size: 0.9rem !important;
+  }
+  .nav-logo span {
+    font-size: 0.55rem !important;
+    letter-spacing: 0.5px !important;
+  }
+  .nav-logo img {
+    height: 38px !important;
+  }
+
+  /* Catalog Navbar adjustments */
+  .catalog-navbar-flex {
+    gap: 0.5rem;
+  }
+
+  #catalog-back-btn {
+    padding: 0.6rem 0.8rem !important;
+  }
+
+  .catalog-back-btn-text {
+    display: none !important;
+  }
+
+  .catalog-back-btn-icon {
+    margin-right: 0 !important;
+  }
+
+  /* Catalog results grid */
+  .catalog-results-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .catalog-item-card {
+    width: 100% !important;
+  }
+
+  /* Catalog Hero adjusts */
+  .catalog-hero {
+    padding: 2.5rem 0 !important;
+  }
+
+  .catalog-search-bar {
+    max-width: 100% !important;
+    padding: 0 1rem;
+  }
+
+  .catalog-tabs {
+    gap: 0.5rem !important;
+  }
+
+  .catalog-tab-btn {
+    padding: 0.4rem 1rem !important;
+    font-size: 0.8rem !important;
+  }
 }
 

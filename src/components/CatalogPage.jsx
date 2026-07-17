@@ -91,9 +91,9 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
             </div>
           </a>
 
-          <button onClick={onNavigateHome} className="btn btn-outline" style={{ padding: '0.6rem 1.5rem', fontSize: '0.85rem' }}>
-            <ArrowLeft size={16} style={{ marginRight: '0.25rem' }} />
-            Volver al Inicio
+          <button id="catalog-back-btn" onClick={onNavigateHome} className="btn btn-outline" style={{ padding: '0.6rem 1.5rem', fontSize: '0.85rem' }}>
+            <ArrowLeft size={16} className="catalog-back-btn-icon" style={{ marginRight: '0.25rem' }} />
+            <span className="catalog-back-btn-text">Volver al Inicio</span>
           </button>
         </div>
       </nav>
