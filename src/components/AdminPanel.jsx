@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { defaultCategories, defaultProducts } from '../utils/defaultCatalog';
+import logoEmpresa from '../logo-empresa.png';
 
 export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, onResetCatalog, onNavigateHome }) {
   const [password, setPassword] = useState('');
@@ -216,9 +217,12 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 100 }}
         >
-          <div className="admin-login-header">
-            <h2>WORLD BUSINESS SERVICES</h2>
-            <span>Gestor de Catálogo Individual</span>
+          <div className="admin-login-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
+            <div>
+              <h2 style={{ margin: 0 }}>WORLD BUSINESS SERVICES</h2>
+              <span>Gestor de Catálogo Individual</span>
+            </div>
           </div>
           
           <form onSubmit={handleLogin} className="admin-login-form">
@@ -266,8 +270,8 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
     <div className="admin-dashboard-container">
       <header className="admin-dashboard-header">
         <div className="container header-flex">
-          <div className="admin-header-title">
-            <Layers size={24} style={{ color: 'var(--secondary-color)' }} />
+          <div className="admin-header-title" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
             <div>
               <h2>Panel de Administración del Catálogo</h2>
               <span>WORLD BUSINESS SERVICES S.A.S.</span>

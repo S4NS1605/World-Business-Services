@@ -9,6 +9,7 @@ import {
   Layers
 } from 'lucide-react';
 import { defaultCategories } from '../utils/defaultCatalog';
+import logoEmpresa from '../logo-empresa.png';
 
 export default function CatalogPage({ products, onNavigateHome, onSelectCategory }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,9 +63,12 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
       {/* Navbar for SPA Navigation */}
       <nav className="catalog-navbar">
         <div className="container catalog-navbar-flex">
-          <a href="#inicio" onClick={(e) => { e.preventDefault(); onNavigateHome(); }} className="nav-logo">
-            <h1>WORLD BUSINESS SERVICES</h1>
-            <span>Mundo de negocios a su servicio</span>
+          <a href="#inicio" onClick={(e) => { e.preventDefault(); onNavigateHome(); }} className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
+            <div>
+              <h1>WORLD BUSINESS SERVICES</h1>
+              <span>Mundo de negocios a su servicio</span>
+            </div>
           </a>
 
           <button onClick={onNavigateHome} className="btn btn-outline" style={{ padding: '0.6rem 1.5rem', fontSize: '0.85rem' }}>

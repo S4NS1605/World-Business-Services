@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
+import logoEmpresa from '../logo-empresa.png';
 
 export default function Header({ onNavigate }) {
   const [scrolled, setScrolled] = useState(false);
@@ -24,7 +25,7 @@ export default function Header({ onNavigate }) {
     setMobileMenuOpen(false);
     const element = document.getElementById(id);
     if (element) {
-      const headerOffset = scrolled ? 70 : 80;
+      const headerOffset = 70;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -44,9 +45,12 @@ export default function Header({ onNavigate }) {
     >
       <div className="container nav-container">
         {/* Brand/Logo */}
-        <a href="#inicio" onClick={(e) => handleScrollTo(e, 'inicio')} className="nav-logo" id="header-logo-link">
-          <h1>WORLD BUSINESS SERVICES</h1>
-          <span>Mundo de negocios a su servicio</span>
+        <a href="#inicio" onClick={(e) => handleScrollTo(e, 'inicio')} className="nav-logo" id="header-logo-link" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
+          <img src={logoEmpresa} alt="WBS Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain' }} />
+          <div>
+            <h1>WORLD BUSINESS SERVICES</h1>
+            <span>Mundo de negocios a su servicio</span>
+          </div>
         </a>
 
         {/* Navigation menu for desktop & mobile */}
