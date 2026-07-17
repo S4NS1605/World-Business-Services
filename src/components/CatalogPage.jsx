@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
@@ -14,6 +14,9 @@ import logoEmpresa from '../logo-empresa.png';
 export default function CatalogPage({ products, onNavigateHome, onSelectCategory }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const itemsPerPage = 6; // 6 products per page (perfect for 3-column grid)
 
   // List of quick filters based on default categories
   const filters = [
@@ -52,6 +55,20 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
     });
   }, [products, searchQuery, selectedFilter]);
 
+  // Reset page to 1 whenever filters or search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedFilter]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  // Paginated subset of filtered products
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredProducts, currentPage]);
+
   // Resolve category name for form quote mapping
   const getCategoryFormValue = (catId) => {
     const found = defaultCategories.find(c => c.id === catId);
@@ -78,20 +95,15 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
         </div>
       </nav>
 
-      {/* Hero Header Section */}
-      <header className="catalog-hero">
-        <div className="container catalog-hero-content">
+      {/* Header Banner */}
+      <section className="catalog-hero">
+        <div className="container">
           <h2>Catálogo de Equipamiento Médico</h2>
           <p>Explore nuestro portafolio completo de tecnología médica certificada por el INVIMA. Todo el catálogo es de carácter informativo.</p>
-        </div>
-      </header>
-
-      {/* Live Filtering and Search Controls */}
-      <section className="catalog-controls">
-        <div className="container">
-          {/* Search Bar */}
-          <div className="catalog-search-bar">
-            <Search className="catalog-search-icon" size={20} />
+          
+          {/* Interactive Search Bar */}
+          <div className="catalog-search-box">
+            <Search className="search-icon" size={20} />
             <input
               type="text"
               value={searchQuery}
@@ -120,84 +132,155 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
       <main className="catalog-main-content">
         <div className="container">
           <AnimatePresence mode="wait">
-            {filteredProducts.length > 0 ? (
-              <motion.div 
-                className="catalog-results-grid"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                {filteredProducts.map((product) => {
-                  return (
-                    <motion.div 
-                      key={product.id} 
-                      className="catalog-item-card"
-                      layout
+            {paginatedProducts.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                <motion.div 
+                  className="catalog-results-grid"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {paginatedProducts.map((product) => {
+                    return (
+                      <motion.div 
+                        key={product.id} 
+                        className="catalog-item-card"
+                        layout
+                      >
+                        {/* Image Box */}
+                        <div className="catalog-item-img-box">
+                          {product.image ? (
+                            <img 
+                              src={product.image} 
+                              alt={product.name} 
+                              className="catalog-item-img" 
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                              Sin Foto de Producto
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Content Body */}
+                        <div className="catalog-item-body">
+                          <div className="catalog-item-brand-row">
+                            <span className="catalog-item-badge">{product.brand}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                              ID: {product.id.toUpperCase()}
+                            </span>
+                          </div>
+
+                          <h3 className="catalog-item-title" style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{product.name}</h3>
+                          <p className="catalog-item-desc" style={{ fontSize: '0.85rem', marginBottom: '1.25rem' }}>{product.description}</p>
+
+                          {/* List of Specs */}
+                          <div className="catalog-item-models-box" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
+                            <div className="catalog-item-models-title" style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                              Especificaciones Técnicas
+                            </div>
+                            <ul className="catalog-models-list">
+                              {product.specs.map((spec, idx) => (
+                                <li key={idx} className="catalog-model-li" style={{ fontSize: '0.8rem' }}>
+                                  <CheckCircle size={13} style={{ marginTop: '0.15rem' }} />
+                                  <span>{spec}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Card CTA Footer */}
+                          <div className="catalog-card-footer">
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                              * Informativo (No transaccional)
+                            </span>
+                            <button
+                              id={`btn-catalog-quote-${product.id}`}
+                              className="product-cta-btn"
+                              onClick={() => onSelectCategory(getCategoryFormValue(product.category))}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                            >
+                              Cotizar Equipo
+                              <ArrowRight size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginTop: '1rem',
+                    flexWrap: 'wrap'
+                  }}>
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="btn btn-outline"
+                      style={{
+                        padding: '0.5rem 1.25rem',
+                        fontSize: '0.85rem',
+                        opacity: currentPage === 1 ? 0.5 : 1,
+                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                        borderRadius: '6px'
+                      }}
                     >
-                      {/* Image Box */}
-                      <div className="catalog-item-img-box">
-                        {product.image ? (
-                          <img 
-                            src={product.image} 
-                            alt={product.name} 
-                            className="catalog-item-img" 
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                            Sin Foto de Producto
-                          </div>
-                        )}
-                      </div>
+                      Anterior
+                    </button>
 
-                      {/* Card Content Body */}
-                      <div className="catalog-item-body">
-                        <div className="catalog-item-brand-row">
-                          <span className="catalog-item-badge">{product.brand}</span>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                            ID: {product.id.toUpperCase()}
-                          </span>
-                        </div>
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        onClick={() => setCurrentPage(pageNumber)}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          border: currentPage === pageNumber ? 'none' : '1px solid var(--border-color)',
+                          background: currentPage === pageNumber ? 'linear-gradient(135deg, #00d2ff, #0075c4)' : 'transparent',
+                          color: currentPage === pageNumber ? '#fff' : 'var(--text-color)',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {pageNumber}
+                      </button>
+                    ))}
 
-                        <h3 className="catalog-item-title" style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{product.name}</h3>
-                        <p className="catalog-item-desc" style={{ fontSize: '0.85rem', marginBottom: '1.25rem' }}>{product.description}</p>
-
-                        {/* List of Specs */}
-                        <div className="catalog-item-models-box" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
-                          <div className="catalog-item-models-title" style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                            Especificaciones Técnicas
-                          </div>
-                          <ul className="catalog-models-list">
-                            {product.specs.map((spec, idx) => (
-                              <li key={idx} className="catalog-model-li" style={{ fontSize: '0.8rem' }}>
-                                <CheckCircle size={13} style={{ marginTop: '0.15rem' }} />
-                                <span>{spec}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Card CTA Footer */}
-                        <div className="catalog-card-footer">
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            * Informativo (No transaccional)
-                          </span>
-                          <button
-                            id={`btn-catalog-quote-${product.id}`}
-                            className="product-cta-btn"
-                            onClick={() => onSelectCategory(getCategoryFormValue(product.category))}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                          >
-                            Cotizar Equipo
-                            <ArrowRight size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="btn btn-outline"
+                      style={{
+                        padding: '0.5rem 1.25rem',
+                        fontSize: '0.85rem',
+                        opacity: currentPage === totalPages ? 0.5 : 1,
+                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               /* No Results State */
               <motion.div 
@@ -218,9 +301,12 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
       {/* Footer Info (Address & Slogan) */}
       <footer className="footer" style={{ marginTop: 'auto', padding: '3rem 0 2rem' }}>
         <div className="container" style={{ textAlign: 'center' }}>
-          <div className="footer-logo" style={{ marginBottom: '1.5rem', alignItems: 'center' }}>
-            <h2>WORLD BUSINESS SERVICES</h2>
-            <span>Mundo de negocios a su servicio</span>
+          <div className="footer-logo" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+            <img src={logoEmpresa} alt="WBS Logo" style={{ height: '42px', width: 'auto', objectFit: 'contain', filter: 'brightness(1.1)' }} />
+            <div style={{ textAlign: 'left' }}>
+              <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-white)', margin: 0, lineHeight: 1.2 }}>WORLD BUSINESS SERVICES</h2>
+              <span style={{ fontSize: '0.65rem', color: 'var(--secondary-color)', fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>Mundo de negocios a su servicio</span>
+            </div>
           </div>
           <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.6)', maxWidth: '500px', margin: '0 auto 1.5rem' }}>
             Calle 30 No. 5-29 M30 No 706 - Ibagué - Tolima - Colombia<br />
