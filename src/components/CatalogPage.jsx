@@ -15,8 +15,7 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  
-  const itemsPerPage = 6; // 6 products per page (perfect for 3-column grid)
+  const [itemsPerPage, setItemsPerPage] = useState(12); // Default to 12 items per page (fits 3x4 grid)
 
   // List of quick filters based on default categories
   const filters = [
@@ -61,13 +60,17 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
   }, [searchQuery, selectedFilter]);
 
   // Calculate total pages
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const totalPages = useMemo(() => {
+    if (itemsPerPage === 'all') return 1;
+    return Math.ceil(filteredProducts.length / itemsPerPage);
+  }, [filteredProducts, itemsPerPage]);
 
   // Paginated subset of filtered products
   const paginatedProducts = useMemo(() => {
+    if (itemsPerPage === 'all') return filteredProducts;
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredProducts, currentPage]);
+  }, [filteredProducts, currentPage, itemsPerPage]);
 
   // Resolve category name for form quote mapping
   const getCategoryFormValue = (catId) => {
@@ -133,158 +136,89 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
         <div className="container">
           <AnimatePresence mode="wait">
             {paginatedProducts.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                <motion.div 
-                  className="catalog-results-grid"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {paginatedProducts.map((product) => {
-                    return (
-                      <motion.div 
-                        key={product.id} 
-                        className="catalog-item-card"
-                        layout
-                      >
-                        {/* Image Box */}
-                        <div className="catalog-item-img-box">
-                          {product.image ? (
-                            <img 
-                              src={product.image} 
-                              alt={product.name} 
-                              className="catalog-item-img" 
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                              Sin Foto de Producto
-                            </div>
-                          )}
+              <motion.div 
+                className="catalog-results-grid"
+                key="results-grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {paginatedProducts.map((product) => {
+                  return (
+                    <motion.div 
+                      key={product.id} 
+                      className="catalog-item-card"
+                      layout
+                    >
+                      {/* Image Box */}
+                      <div className="catalog-item-img-box">
+                        {product.image ? (
+                          <img 
+                            src={product.image} 
+                            alt={product.name} 
+                            className="catalog-item-img" 
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                            Sin Foto de Producto
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Content Body */}
+                      <div className="catalog-item-body">
+                        <div className="catalog-item-brand-row">
+                          <span className="catalog-item-badge">{product.brand}</span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                            ID: {product.id.toUpperCase()}
+                          </span>
                         </div>
 
-                        {/* Card Content Body */}
-                        <div className="catalog-item-body">
-                          <div className="catalog-item-brand-row">
-                            <span className="catalog-item-badge">{product.brand}</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                              ID: {product.id.toUpperCase()}
-                            </span>
-                          </div>
+                        <h3 className="catalog-item-title" style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{product.name}</h3>
+                        <p className="catalog-item-desc" style={{ fontSize: '0.85rem', marginBottom: '1.25rem' }}>{product.description}</p>
 
-                          <h3 className="catalog-item-title" style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>{product.name}</h3>
-                          <p className="catalog-item-desc" style={{ fontSize: '0.85rem', marginBottom: '1.25rem' }}>{product.description}</p>
-
-                          {/* List of Specs */}
-                          <div className="catalog-item-models-box" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
-                            <div className="catalog-item-models-title" style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-                              Especificaciones Técnicas
-                            </div>
-                            <ul className="catalog-models-list">
-                              {product.specs.map((spec, idx) => (
-                                <li key={idx} className="catalog-model-li" style={{ fontSize: '0.8rem' }}>
-                                  <CheckCircle size={13} style={{ marginTop: '0.15rem' }} />
-                                  <span>{spec}</span>
-                                </li>
-                              ))}
-                            </ul>
+                        {/* List of Specs */}
+                        <div className="catalog-item-models-box" style={{ padding: '1rem', marginBottom: '1.5rem' }}>
+                          <div className="catalog-item-models-title" style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                            Especificaciones Técnicas
                           </div>
-
-                          {/* Card CTA Footer */}
-                          <div className="catalog-card-footer">
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                              * Informativo (No transaccional)
-                            </span>
-                            <button
-                              id={`btn-catalog-quote-${product.id}`}
-                              className="product-cta-btn"
-                              onClick={() => onSelectCategory(getCategoryFormValue(product.category))}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                            >
-                              Cotizar Equipo
-                              <ArrowRight size={14} />
-                            </button>
-                          </div>
+                          <ul className="catalog-models-list">
+                            {product.specs.map((spec, idx) => (
+                              <li key={idx} className="catalog-model-li" style={{ fontSize: '0.8rem' }}>
+                                <CheckCircle size={13} style={{ marginTop: '0.15rem' }} />
+                                <span>{spec}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                </motion.div>
 
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginTop: '1rem',
-                    flexWrap: 'wrap'
-                  }}>
-                    {/* Previous Button */}
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="btn btn-outline"
-                      style={{
-                        padding: '0.5rem 1.25rem',
-                        fontSize: '0.85rem',
-                        opacity: currentPage === 1 ? 0.5 : 1,
-                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      Anterior
-                    </button>
-
-                    {/* Page Numbers */}
-                    {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNumber) => (
-                      <button
-                        key={pageNumber}
-                        onClick={() => setCurrentPage(pageNumber)}
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '50%',
-                          border: currentPage === pageNumber ? 'none' : '1px solid var(--border-color)',
-                          background: currentPage === pageNumber ? 'linear-gradient(135deg, #00d2ff, #0075c4)' : 'transparent',
-                          color: currentPage === pageNumber ? '#fff' : 'var(--text-color)',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          fontSize: '0.9rem',
-                          transition: 'all 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {pageNumber}
-                      </button>
-                    ))}
-
-                    {/* Next Button */}
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="btn btn-outline"
-                      style={{
-                        padding: '0.5rem 1.25rem',
-                        fontSize: '0.85rem',
-                        opacity: currentPage === totalPages ? 0.5 : 1,
-                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                        borderRadius: '6px'
-                      }}
-                    >
-                      Siguiente
-                    </button>
-                  </div>
-                )}
-              </div>
+                        {/* Card CTA Footer */}
+                        <div className="catalog-card-footer">
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            * Informativo (No transaccional)
+                          </span>
+                          <button
+                            id={`btn-catalog-quote-${product.id}`}
+                            className="product-cta-btn"
+                            onClick={() => onSelectCategory(getCategoryFormValue(product.category))}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                          >
+                            Cotizar Equipo
+                            <ArrowRight size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
             ) : (
               /* No Results State */
               <motion.div 
                 className="catalog-no-results"
+                key="no-results"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -295,6 +229,114 @@ export default function CatalogPage({ products, onNavigateHome, onSelectCategory
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Pagination and Items Per Page Row */}
+          {(totalPages > 1 || filteredProducts.length > 12) && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '3.5rem',
+              flexWrap: 'wrap',
+              gap: '1.5rem',
+              borderTop: '1px solid var(--border-color)',
+              paddingTop: '2rem'
+            }}>
+              {/* Items Per Page Selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mostrar por página:</span>
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {[12, 24, 48, 'all'].map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => {
+                        setItemsPerPage(size);
+                        setCurrentPage(1);
+                      }}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '4px',
+                        border: itemsPerPage === size ? 'none' : '1px solid var(--border-color)',
+                        background: itemsPerPage === size ? 'linear-gradient(135deg, #00d2ff, #0075c4)' : 'transparent',
+                        color: itemsPerPage === size ? '#fff' : 'var(--text-color)',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {size === 'all' ? 'Todos' : size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Page Navigation Buttons */}
+              {totalPages > 1 && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}>
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="btn btn-outline"
+                    style={{
+                      padding: '0.4rem 1rem',
+                      fontSize: '0.8rem',
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    Anterior
+                  </button>
+
+                  {/* Page Numbers */}
+                  {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      onClick={() => setCurrentPage(pageNumber)}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        border: currentPage === pageNumber ? 'none' : '1px solid var(--border-color)',
+                        background: currentPage === pageNumber ? 'linear-gradient(135deg, #00d2ff, #0075c4)' : 'transparent',
+                        color: currentPage === pageNumber ? '#fff' : 'var(--text-color)',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {pageNumber}
+                    </button>
+                  ))}
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="btn btn-outline"
+                    style={{
+                      padding: '0.4rem 1rem',
+                      fontSize: '0.8rem',
+                      opacity: currentPage === totalPages ? 0.5 : 1,
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
