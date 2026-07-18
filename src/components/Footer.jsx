@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin, Phone, Mail, Clock, Shield, Globe } from 'lucide-react';
 import logoEmpresa from '../logo-empresa.png';
 
-export default function Footer() {
+export default function Footer({ lang }) {
   const currentYear = new Date().getFullYear();
 
   const handleScrollTo = (e, id) => {
@@ -29,36 +29,40 @@ export default function Footer() {
               <img src={logoEmpresa} alt="WBS Logo" style={{ height: '50px', width: 'auto', objectFit: 'contain', borderRadius: '4px', filter: 'brightness(1.1)' }} />
               <div>
                 <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-white)', margin: 0, lineHeight: 1.2 }}>WORLD BUSINESS SERVICES</h2>
-                <span style={{ fontSize: '0.65rem', color: 'var(--secondary-color)', fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>Mundo de negocios a su servicio</span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--secondary-color)', fontWeight: 600, display: 'block', textTransform: 'uppercase' }}>
+                  {lang === 'en' ? 'A world of business at your service' : 'Mundo de negocios a su servicio'}
+                </span>
               </div>
             </div>
             <p className="footer-about">
-              Importadores y distribuidores de equipamiento médico y accesorios hospitalarios de alta complejidad. Proveemos soluciones tecnológicas avanzadas en Colombia y soporte técnico especializado.
+              {lang === 'en'
+                ? 'Importers and distributors of high-complexity medical equipment and hospital accessories. We provide advanced technological solutions in Colombia and specialized technical support.'
+                : 'Importadores y distribuidores de equipamiento médico y accesorios hospitalarios de alta complejidad. Proveemos soluciones tecnológicas avanzadas en Colombia y soporte técnico especializado.'}
             </p>
           </div>
 
           {/* Column 2: Navigation Links */}
           <div className="footer-column">
-            <h3 className="footer-title">Enlaces Rápidos</h3>
+            <h3 className="footer-title">{lang === 'en' ? 'Quick Links' : 'Enlaces Rápidos'}</h3>
             <ul className="footer-links">
               <li>
                 <a href="#inicio" className="footer-link" onClick={(e) => handleScrollTo(e, 'inicio')}>
-                  Inicio
+                  {lang === 'en' ? 'Home' : 'Inicio'}
                 </a>
               </li>
               <li>
                 <a href="#equipos" className="footer-link" onClick={(e) => handleScrollTo(e, 'equipos')}>
-                  Equipos Médicos
+                  {lang === 'en' ? 'Medical Equipment' : 'Equipos Médicos'}
                 </a>
               </li>
               <li>
                 <a href="#marcas" className="footer-link" onClick={(e) => handleScrollTo(e, 'marcas')}>
-                  Marcas Aliadas
+                  {lang === 'en' ? 'Allied Brands' : 'Marcas Aliadas'}
                 </a>
               </li>
               <li>
                 <a href="#cotizar" className="footer-link" onClick={(e) => handleScrollTo(e, 'cotizar')}>
-                  Solicitar Presupuesto
+                  {lang === 'en' ? 'Request a Quote' : 'Solicitar Presupuesto'}
                 </a>
               </li>
             </ul>
@@ -66,7 +70,7 @@ export default function Footer() {
 
           {/* Column 3: Contact Info */}
           <div className="footer-column">
-            <h3 className="footer-title">Información de Contacto</h3>
+            <h3 className="footer-title">{lang === 'en' ? 'Contact Information' : 'Información de Contacto'}</h3>
             <ul className="footer-contact-list">
               <li className="footer-contact-item">
                 <MapPin size={20} />
@@ -93,8 +97,8 @@ export default function Footer() {
               <li className="footer-contact-item">
                 <Clock size={18} />
                 <span>
-                  Lunes - Viernes: 8:00 AM - 6:00 PM<br />
-                  Sábados: 8:00 AM - 12:00 PM
+                  {lang === 'en' ? 'Monday - Friday: 8:00 AM - 6:00 PM' : 'Lunes - Viernes: 8:00 AM - 6:00 PM'}<br />
+                  {lang === 'en' ? 'Saturdays: 8:00 AM - 12:00 PM' : 'Sábados: 8:00 AM - 12:00 PM'}
                 </span>
               </li>
             </ul>
@@ -103,10 +107,12 @@ export default function Footer() {
 
         {/* Footer Bottom */}
         <div className="footer-bottom">
-          <p>&copy; {currentYear} WORLD BUSINESS SERVICES S.A.S. Todos los derechos reservados.</p>
+          <p>&copy; {currentYear} WORLD BUSINESS SERVICES S.A.S. {lang === 'en' ? 'All rights reserved.' : 'Todos los derechos reservados.'}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
             <Shield size={14} style={{ color: 'var(--secondary-color)' }} />
-            <span>Distribución de Tecnología Médica Regulada por INVIMA</span>
+            <span>
+              {lang === 'en' ? 'INVIMA Regulated Medical Technology Distribution' : 'Distribución de Tecnología Médica Regulada por INVIMA'}
+            </span>
           </div>
         </div>
       </div>

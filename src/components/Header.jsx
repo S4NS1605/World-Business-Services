@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ArrowRight } from 'lucide-react';
 import logoEmpresa from '../logo-empresa.png';
+import { uiTranslations } from '../utils/translations';
 
-export default function Header({ onNavigate }) {
+export default function Header({ onNavigate, lang, onLanguageChange }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const t = (key) => uiTranslations[lang]?.[key] || uiTranslations['en']?.[key] || key;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,7 +52,7 @@ export default function Header({ onNavigate }) {
           <img src={logoEmpresa} alt="WBS Logo" style={{ height: '52px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }} />
           <div>
             <h1>WORLD BUSINESS SERVICES</h1>
-            <span>Mundo de negocios a su servicio</span>
+            <span>{t('slogan')}</span>
           </div>
         </a>
 
@@ -63,7 +66,7 @@ export default function Header({ onNavigate }) {
                 className="nav-link"
                 onClick={(e) => handleScrollTo(e, 'inicio')}
               >
-                Inicio
+                {t('nav_home')}
               </a>
             </li>
             <li>
@@ -73,7 +76,7 @@ export default function Header({ onNavigate }) {
                 className="nav-link"
                 onClick={(e) => handleScrollTo(e, 'equipos')}
               >
-                Equipos
+                {t('nav_products')}
               </a>
             </li>
             <li>
@@ -83,7 +86,7 @@ export default function Header({ onNavigate }) {
                 className="nav-link"
                 onClick={(e) => handleScrollTo(e, 'marcas')}
               >
-                Marcas
+                {t('nav_brands')}
               </a>
             </li>
             <li>
@@ -98,7 +101,7 @@ export default function Header({ onNavigate }) {
                 }}
                 style={{ color: 'var(--secondary-color)', fontWeight: '700' }}
               >
-                Ver Catálogo
+                {t('nav_view_catalog')}
               </a>
             </li>
           </ul>
@@ -109,9 +112,43 @@ export default function Header({ onNavigate }) {
             className="btn btn-secondary nav-cta-btn-header"
             onClick={(e) => handleScrollTo(e, 'cotizar')}
           >
-            Solicitar Presupuesto
+            {t('hero_btn_quote')}
             <ArrowRight size={16} />
           </a>
+
+          {/* Language Switcher Toggle Pill */}
+          <div className="lang-switcher-nav" style={{ display: 'flex', gap: '0.3rem', alignItems: 'center', marginLeft: '1rem', padding: '0.25rem', borderRadius: '20px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-white)', boxShadow: 'var(--shadow-sm)' }}>
+            <button 
+              onClick={() => onLanguageChange('en')} 
+              style={{ 
+                padding: '0.2rem 0.6rem', 
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: 700, 
+                backgroundColor: lang === 'en' ? 'var(--secondary-color)' : 'transparent',
+                color: lang === 'en' ? '#fff' : 'var(--text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              EN
+            </button>
+            <button 
+              onClick={() => onLanguageChange('es')} 
+              style={{ 
+                padding: '0.2rem 0.6rem', 
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: 700, 
+                backgroundColor: lang === 'es' ? 'var(--secondary-color)' : 'transparent',
+                color: lang === 'es' ? '#fff' : 'var(--text-muted)',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              ES
+            </button>
+          </div>
         </nav>
 
         {/* Hamburger button for mobile */}
@@ -119,7 +156,7 @@ export default function Header({ onNavigate }) {
           id="mobile-menu-toggle"
           className="mobile-menu-btn"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Abrir menú de navegación"
+          aria-label={lang === 'en' ? 'Open navigation menu' : 'Abrir menú de navegación'}
         >
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>

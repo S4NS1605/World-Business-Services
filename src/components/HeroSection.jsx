@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, HeartPulse, Activity } from 'lucide-react';
 import heroImage from '../assets/medical_equipment_hero.jpg';
 
-export default function HeroSection() {
+export default function HeroSection({ lang }) {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -69,7 +69,7 @@ export default function HeroSection() {
           >
             <motion.div className="hero-badge" variants={itemVariants}>
               <ShieldCheck size={16} />
-              Equipamiento Profesional Garantizado
+              {lang === 'en' ? 'Guaranteed Professional Equipment' : 'Equipamiento Profesional Garantizado'}
             </motion.div>
 
             <motion.h1 className="hero-title" variants={itemVariants}>
@@ -83,11 +83,13 @@ export default function HeroSection() {
               variants={itemVariants}
               style={{ fontWeight: 500, fontSize: 'clamp(1.2rem, 3vw, 1.8rem)', color: 'var(--primary-color)', margin: '1rem 0' }}
             >
-              Mundo de Negocios a su Servicio
+              {lang === 'en' ? 'A World of Business at your Service' : 'Mundo de Negocios a su Servicio'}
             </motion.h2>
 
             <motion.p className="hero-subtitle" variants={itemVariants}>
-              Suministramos tecnología médica de vanguardia con las mejores marcas del mercado. Impulsamos la calidad y seguridad en el cuidado de la salud de sus pacientes.
+              {lang === 'en' 
+                ? 'We supply state-of-the-art medical technology from the industry\'s leading brands. We enhance the quality and safety of patient care.'
+                : 'Suministramos tecnología médica de vanguardia con las mejores marcas del mercado. Impulsamos la calidad y seguridad en el cuidado de la salud de sus pacientes.'}
             </motion.p>
 
             <motion.div className="hero-cta" variants={itemVariants}>
@@ -97,7 +99,7 @@ export default function HeroSection() {
                 className="btn btn-secondary"
                 onClick={handleScrollToQuote}
               >
-                Solicitar Presupuesto
+                {lang === 'en' ? 'Request a Quote' : 'Solicitar Presupuesto'}
               </a>
               <a
                 id="hero-cta-catalog"
@@ -108,7 +110,7 @@ export default function HeroSection() {
                   document.getElementById('equipos')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Ver Portafolio
+                {lang === 'en' ? 'View Products' : 'Ver Portafolio'}
               </a>
             </motion.div>
           </motion.div>
@@ -123,7 +125,7 @@ export default function HeroSection() {
             <div className="hero-image-bg"></div>
             <img
               src={heroImage}
-              alt="Monitores médicos de alta precisión"
+              alt="Medical equipment"
               className="hero-img"
               loading="eager"
             />
@@ -138,8 +140,8 @@ export default function HeroSection() {
                 <HeartPulse size={20} />
               </div>
               <div className="text-container">
-                <span className="text-title">Soporte Vital</span>
-                <span className="text-subtitle">Monitoreo Avanzado</span>
+                <span className="text-title">{lang === 'en' ? 'Life Support' : 'Soporte Vital'}</span>
+                <span className="text-subtitle">{lang === 'en' ? 'Advanced Monitoring' : 'Monitoreo Avanzado'}</span>
               </div>
             </motion.div>
 
@@ -153,8 +155,8 @@ export default function HeroSection() {
                 <Activity size={20} />
               </div>
               <div className="text-container">
-                <span className="text-title">Precisión Médica</span>
-                <span className="text-subtitle">Tecnología Certificada</span>
+                <span className="text-title">{lang === 'en' ? 'Medical Precision' : 'Precisión Médica'}</span>
+                <span className="text-subtitle">{lang === 'en' ? 'Certified Technology' : 'Tecnología Certificada'}</span>
               </div>
             </motion.div>
           </motion.div>

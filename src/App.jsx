@@ -11,13 +11,27 @@ import CatalogPage from './components/CatalogPage';
 
 import { supabase } from './utils/supabase';
 import { defaultProducts as backupProducts } from './utils/defaultCatalog.backup';
+import { translateProductToEn } from './utils/translations';
 
 function App() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [recentlyDeleted, setRecentlyDeleted] = useState(null);
   const [undoTimer, setUndoTimer] = useState(null);
+  
+  // Language State - Default to English ('en')
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem('wbs_lang');
+    return saved ? saved : 'en';
+  });
+
+  const handleLanguageChange = (newLang) => {
+    setLang(newLang);
+    localStorage.setItem('wbs_lang', newLang);
+  };
   
   // Client-side router path state
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -33,27 +47,35 @@ function App() {
       console.warn('Failed to clear old localStorage keys:', e);
     }
 
-    async function loadProducts() {
+    async function loadData() {
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('name', { ascending: true });
+        const [prodRes, brandRes, quoteRes] = await Promise.all([
+          supabase.from('products').select('*').order('name', { ascending: true }),
+          supabase.from('brands').select('*').order('created_at', { ascending: true }),
+          supabase.from('quotes').select('*').order('created_at', { ascending: false })
+        ]);
         
-        if (error) {
-          throw error;
+        if (prodRes.error) throw prodRes.error;
+        if (prodRes.data) setProducts(prodRes.data);
+
+        if (brandRes.error) {
+          console.warn('Brands table might not exist yet, please run migration:', brandRes.error.message);
+        } else if (brandRes.data) {
+          setBrands(brandRes.data);
         }
 
-        if (data) {
-          setProducts(data);
+        if (quoteRes.error) {
+          console.warn('Quotes table might not exist yet, please run migration:', quoteRes.error.message);
+        } else if (quoteRes.data) {
+          setQuotes(quoteRes.data);
         }
       } catch (e) {
-        console.error('Error loading products from Supabase:', e);
+        console.error('Error loading data from Supabase:', e);
       } finally {
         setLoading(false);
       }
     }
-    loadProducts();
+    loadData();
   }, []);
 
   // Track browser navigation popstate
@@ -199,6 +221,75 @@ function App() {
     }
   };
 
+  // Add allied brand to Supabase
+  const handleAddBrand = async (brand) => {
+    try {
+      const { data, error } = await supabase
+        .from('brands')
+        .insert([brand])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setBrands(prev => [...prev, data[0]]);
+      }
+    } catch (e) {
+      console.error('Error adding brand to Supabase:', e.message);
+      alert('Error al agregar marca: ' + e.message);
+    }
+  };
+
+  // Delete allied brand from Supabase
+  const handleDeleteBrand = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('brands')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setBrands(prev => prev.filter(b => b.id !== id));
+    } catch (e) {
+      console.error('Error deleting brand from Supabase:', e.message);
+      alert('Error al eliminar marca: ' + e.message);
+    }
+  };
+
+  // Submit quote request to Supabase
+  const handleSubmitQuote = async (quoteData) => {
+    try {
+      const { data, error } = await supabase
+        .from('quotes')
+        .insert([quoteData])
+        .select();
+
+      if (error) throw error;
+      if (data) {
+        setQuotes(prev => [data[0], ...prev]);
+      }
+    } catch (e) {
+      console.error('Error submitting quote to Supabase:', e.message);
+      throw e;
+    }
+  };
+
+  // Delete quote request from Supabase
+  const handleDeleteQuote = async (id) => {
+    if (!window.confirm('¿Está seguro de que desea eliminar este registro de cotización?')) return;
+    try {
+      const { error } = await supabase
+        .from('quotes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setQuotes(prev => prev.filter(q => q.id !== id));
+    } catch (e) {
+      console.error('Error deleting quote from Supabase:', e.message);
+      alert('Error al eliminar registro de cotización: ' + e.message);
+    }
+  };
+
   // Custom SPA navigation
   const navigateTo = (path) => {
     window.history.pushState(null, '', path);
@@ -248,7 +339,9 @@ function App() {
           animation: 'spin 1s linear infinite',
           marginBottom: '1.5rem'
         }} />
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 500, letterSpacing: '1px' }}>Conectando con la base de datos...</h2>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 500, letterSpacing: '1px' }}>
+          {lang === 'en' ? 'Connecting to database...' : 'Conectando con la base de datos...'}
+        </h2>
         <style>{`
           @keyframes spin {
             to { transform: rotate(360deg); }
@@ -280,7 +373,11 @@ function App() {
         animation: 'slideUp 0.3s ease-out'
       }}>
         <span style={{ fontSize: '0.85rem' }}>
-          Artículo <strong>{recentlyDeleted.name}</strong> eliminado.
+          {lang === 'en' ? (
+            <>Product <strong>{recentlyDeleted.name}</strong> deleted.</>
+          ) : (
+            <>Artículo <strong>{recentlyDeleted.name}</strong> eliminado.</>
+          )}
         </span>
         <button
           onClick={handleUndoDelete}
@@ -298,7 +395,7 @@ function App() {
           onMouseEnter={(e) => e.target.style.background = '#00b5dc'}
           onMouseLeave={(e) => e.target.style.background = '#00d2ff'}
         >
-          Deshacer
+          {lang === 'en' ? 'Undo' : 'Deshacer'}
         </button>
         <button 
           onClick={() => {
@@ -337,6 +434,11 @@ function App() {
           onDeleteProduct={handleDeleteProduct} 
           onResetCatalog={handleResetCatalog} 
           onNavigateHome={() => navigateTo('/')}
+          brands={brands}
+          onAddBrand={handleAddBrand}
+          onDeleteBrand={handleDeleteBrand}
+          quotes={quotes}
+          onDeleteQuote={handleDeleteQuote}
         />
         {renderUndoToast()}
       </>
@@ -351,6 +453,8 @@ function App() {
           products={products}
           onNavigateHome={() => navigateTo('/')}
           onSelectCategory={handleCatalogQuoteSelect}
+          lang={lang}
+          onLanguageChange={handleLanguageChange}
         />
         {renderUndoToast()}
       </>
@@ -361,29 +465,30 @@ function App() {
   return (
     <>
       {/* Header / Sticky Glassmorphism Navigation */}
-      <Header onNavigate={navigateTo} currentPath={currentPath} />
+      <Header onNavigate={navigateTo} currentPath={currentPath} lang={lang} onLanguageChange={handleLanguageChange} />
 
       {/* Main Content Sections */}
       <main style={{ flexGrow: 1 }}>
         {/* Hero Section */}
-        <HeroSection />
+        <HeroSection lang={lang} />
 
         {/* Product Catalog Grid (Receives dynamic database props) */}
         <ProductGrid 
           products={products} 
           onSelectCategory={setSelectedCategory} 
           onNavigate={navigateTo}
+          lang={lang}
         />
 
         {/* Brand Logos Infinite Marquee */}
-        <BrandsMarquee />
+        <BrandsMarquee brands={brands} />
 
         {/* State-controlled Interactive Quotation Form */}
-        <QuoteForm selectedCategory={selectedCategory} />
+        <QuoteForm selectedCategory={selectedCategory} lang={lang} onSubmitQuote={handleSubmitQuote} />
       </main>
 
       {/* Footer Details (Address, Contact & Slogan) */}
-      <Footer />
+      <Footer lang={lang} />
       {renderUndoToast()}
     </>
   );

@@ -17,8 +17,20 @@ import {
 } from 'lucide-react';
 import { defaultCategories, defaultProducts } from '../utils/defaultCatalog';
 import logoEmpresa from '../logo-empresa.png';
+import { translateEsToEn } from '../utils/translations';
 
-export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, onResetCatalog, onNavigateHome }) {
+export default function AdminPanel({ 
+  products, 
+  onSaveProduct, 
+  onDeleteProduct, 
+  onResetCatalog, 
+  onNavigateHome,
+  brands = [],
+  onAddBrand,
+  onDeleteBrand,
+  quotes = [],
+  onDeleteQuote
+}) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,12 +39,58 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
   // Dashboard Management State
   const [editingProduct, setEditingProduct] = useState(null); // null or product object
   const [newSpec, setNewSpec] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Brand Management State
+  const [newBrandName, setNewBrandName] = useState('');
+  const [newBrandImage, setNewBrandImage] = useState('');
+
+  // Dashboard Active Tab State
+  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'quotes'
+
+  // Quotes filter and search state
+  const [quoteSearchQuery, setQuoteSearchQuery] = useState('');
+  const [quoteFilterEquipment, setQuoteFilterEquipment] = useState('all');
   
   // JSON import state
   const [jsonInput, setJsonInput] = useState('');
   const [jsonError, setJsonError] = useState('');
   const [jsonSuccess, setJsonSuccess] = useState(false);
   const [jsonOpen, setJsonOpen] = useState(false);
+
+  // Handle clipboard paste for brand image
+  const handlePasteBrandImage = (e) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setNewBrandImage(reader.result);
+            };
+            reader.readAsDataURL(file);
+          }
+          break;
+        }
+      }
+    }
+  };
+
+  const handleSaveBrand = async (e) => {
+    e.preventDefault();
+    if (!newBrandImage) {
+      alert('La imagen de la marca es requerida.');
+      return;
+    }
+    await onAddBrand({
+      name: newBrandName.trim() || 'Marca Aliada',
+      image_url: newBrandImage
+    });
+    setNewBrandName('');
+    setNewBrandImage('');
+  };
   
   // Login handler
   const handleLogin = (e) => {
@@ -54,8 +112,10 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
       brand: 'Marca',
       category: 'bombas-infusion',
       description: 'Breve descripción del equipo médico y sus características principales.',
+      description_en: '',
       image: '',
-      specs: ['Especificación técnica de muestra 1']
+      specs: ['Especificación técnica de muestra 1'],
+      specs_en: []
     });
   };
 
@@ -144,10 +204,12 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
       // Map flexible JSON keys to internal field names
       const name = parsed.nombre_equipo || parsed.name || parsed.nombre || '';
       const description = parsed.descripcion || parsed.description || '';
+      const description_en = parsed.description_en || parsed.descripcion_en || '';
       const brand = parsed.marca || parsed.brand || '';
       const rawCategory = (parsed.categoria || parsed.category || '').toLowerCase().trim();
       const image = parsed.imagen_url || parsed.image || parsed.imagen || '';
       const specs = parsed.especificaciones || parsed.specs || parsed.especificacion || [];
+      const specs_en = parsed.specs_en || parsed.especificaciones_en || [];
 
       if (!name) {
         setJsonError('El campo "nombre_equipo" es requerido en el JSON.');
@@ -163,15 +225,18 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
       }
 
       const specsArray = Array.isArray(specs) ? specs : (typeof specs === 'string' ? [specs] : []);
+      const specsEnArray = Array.isArray(specs_en) ? specs_en : (typeof specs_en === 'string' ? [specs_en] : []);
 
       setEditingProduct(prev => ({
         ...prev,
         name: name.trim(),
         description: description.trim(),
+        description_en: description_en.trim(),
         brand: brand.trim(),
         category,
         image: image.trim() ? image.trim() : prev.image,
-        specs: specsArray.map(s => String(s).trim()).filter(Boolean)
+        specs: specsArray.map(s => String(s).trim()).filter(Boolean),
+        specs_en: specsEnArray.map(s => String(s).trim()).filter(Boolean)
       }));
 
       setJsonInput('');
@@ -190,8 +255,33 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
       return;
     }
 
-    await onSaveProduct(editingProduct);
-    setEditingProduct(null);
+    setIsSaving(true);
+    try {
+      let description_en = editingProduct.description_en || '';
+      if (!description_en.trim()) {
+        description_en = await translateEsToEn(editingProduct.description);
+      }
+
+      let specs_en = editingProduct.specs_en || [];
+      if (!Array.isArray(specs_en) || specs_en.length === 0 || specs_en.length !== editingProduct.specs.length) {
+        specs_en = await Promise.all((editingProduct.specs || []).map(spec => translateEsToEn(spec)));
+      }
+
+      const finalProduct = {
+        ...editingProduct,
+        description_en,
+        specs_en
+      };
+
+      await onSaveProduct(finalProduct);
+      setEditingProduct(null);
+    } catch (err) {
+      console.error('Error saving and translating product:', err);
+      await onSaveProduct(editingProduct);
+      setEditingProduct(null);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Reset entire catalog to original defaults
@@ -291,6 +381,45 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
       </header>
 
       <main className="container admin-dashboard-main">
+        {!editingProduct && (
+          <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }} className="admin-dashboard-tabs">
+            <button 
+              type="button"
+              onClick={() => setActiveTab('products')} 
+              style={{
+                padding: '0.75rem 0.5rem',
+                border: 'none',
+                background: 'none',
+                fontWeight: 700,
+                fontSize: '1rem',
+                color: activeTab === 'products' ? 'var(--primary-color)' : 'var(--text-muted)',
+                borderBottom: activeTab === 'products' ? '3px solid var(--primary-color)' : '3px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Equipos y Marcas
+            </button>
+            <button 
+              type="button"
+              onClick={() => setActiveTab('quotes')} 
+              style={{
+                padding: '0.75rem 0.5rem',
+                border: 'none',
+                background: 'none',
+                fontWeight: 700,
+                fontSize: '1rem',
+                color: activeTab === 'quotes' ? 'var(--primary-color)' : 'var(--text-muted)',
+                borderBottom: activeTab === 'quotes' ? '3px solid var(--primary-color)' : '3px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Solicitudes Recibidas ({quotes.length})
+            </button>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {!editingProduct ? (
             /* Product List Dashboard */
@@ -301,13 +430,15 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="dashboard-section-header">
-                <h3>Artículos en el Catálogo</h3>
-                <button onClick={handleAddNewProduct} className="btn btn-secondary add-new-cat-btn">
-                  <Plus size={16} />
-                  Nuevo Artículo
-                </button>
-              </div>
+              {activeTab === 'products' ? (
+                <>
+                  <div className="dashboard-section-header">
+                    <h3>Artículos en el Catálogo</h3>
+                    <button onClick={handleAddNewProduct} className="btn btn-secondary add-new-cat-btn" type="button">
+                      <Plus size={16} />
+                      Nuevo Artículo
+                    </button>
+                  </div>
 
               <div className="admin-table-wrapper">
                 <table className="admin-table">
@@ -367,6 +498,249 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
                   </tbody>
                 </table>
               </div>
+
+              {/* Allied Brands Management Section */}
+              <div className="dashboard-section-header" style={{ marginTop: '3.5rem' }}>
+                <h3>Gestionar Marcas Aliadas</h3>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', marginTop: '1.25rem', alignItems: 'start' }} className="admin-brands-grid-manager">
+                {/* List of current brands */}
+                <div style={{ backgroundColor: 'var(--bg-white, #fff)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                  {brands.length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '1.25rem' }}>
+                      {brands.map((b) => (
+                        <div key={b.id} style={{ position: 'relative', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fafafa', minHeight: '90px' }}>
+                          <img src={b.image_url} alt={b.name} style={{ height: '35px', maxWidth: '110px', objectFit: 'contain', marginBottom: '0.4rem' }} />
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>{b.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteBrand(b.id)}
+                            style={{
+                              position: 'absolute',
+                              top: '-8px',
+                              right: '-8px',
+                              width: '24px',
+                              height: '24px',
+                              borderRadius: '50%',
+                              backgroundColor: '#ef4444',
+                              color: '#fff',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            }}
+                            title="Eliminar Marca"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
+                      No hay marcas aliadas agregadas en la base de datos.
+                    </div>
+                  )}
+                </div>
+
+                {/* Add new brand form */}
+                <div style={{ backgroundColor: 'var(--bg-white, #fff)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                  <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 700, color: 'var(--primary-color)' }}>Añadir Marca</h4>
+                  <form onSubmit={handleSaveBrand} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>Nombre de la Marca</label>
+                      <input
+                        type="text"
+                        value={newBrandName}
+                        onChange={(e) => setNewBrandName(e.target.value)}
+                        placeholder="Ej. Seca, Mindray, Edan..."
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>URL del Logo o Pegar Imagen</label>
+                      <input
+                        type="url"
+                        value={newBrandImage.startsWith('data:') ? '' : newBrandImage}
+                        onChange={(e) => setNewBrandImage(e.target.value)}
+                        onPaste={handlePasteBrandImage}
+                        placeholder="Pegue enlace o use Ctrl+V para pegar captura"
+                        style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
+                      />
+                    </div>
+
+                    {newBrandImage && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', border: '1px dashed var(--border-color)', padding: '0.75rem', borderRadius: '6px', backgroundColor: '#fafafa' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Vista previa del logo:</span>
+                        <img src={newBrandImage} alt="Brand Preview" style={{ height: '35px', maxWidth: '120px', objectFit: 'contain' }} />
+                        <button type="button" onClick={() => setNewBrandImage('')} style={{ fontSize: '0.7rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Quitar Imagen</button>
+                      </div>
+                    )}
+
+                    <button type="submit" className="btn btn-secondary" style={{ padding: '0.6rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', width: '100%' }}>
+                      <Plus size={16} />
+                      Añadir Marca
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </>
+          ) : (
+              /* Quotes Management Section */
+              (() => {
+                const filteredQuotes = quotes.filter(q => {
+                  const query = quoteSearchQuery.toLowerCase();
+                  const matchesSearch = 
+                    (q.name || '').toLowerCase().includes(query) ||
+                    (q.institution || '').toLowerCase().includes(query) ||
+                    (q.email || '').toLowerCase().includes(query) ||
+                    (q.phone || '').toLowerCase().includes(query) ||
+                    (q.message || '').toLowerCase().includes(query);
+                    
+                  const matchesEquipment = quoteFilterEquipment === 'all' || q.equipment === quoteFilterEquipment;
+                  return matchesSearch && matchesEquipment;
+                });
+
+                const uniqueEquipments = Array.from(new Set(quotes.map(q => q.equipment))).filter(Boolean);
+
+                return (
+                  <div style={{ backgroundColor: 'var(--bg-white, #fff)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                    <div className="dashboard-section-header" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                      <h3 style={{ margin: 0 }}>Solicitudes de Cotización ({filteredQuotes.length})</h3>
+                    </div>
+
+                    {/* Filter & Search Bar */}
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }} className="admin-quotes-filters">
+                      <div style={{ flex: 1, minWidth: '260px' }}>
+                        <input
+                          type="text"
+                          placeholder="Buscar por cliente, institución, correo, teléfono o mensaje..."
+                          value={quoteSearchQuery}
+                          onChange={(e) => setQuoteSearchQuery(e.target.value)}
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', fontSize: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)', outline: 'none' }}
+                        />
+                      </div>
+                      <div style={{ width: '240px' }}>
+                        <select
+                          value={quoteFilterEquipment}
+                          onChange={(e) => setQuoteFilterEquipment(e.target.value)}
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', fontSize: '0.85rem', borderRadius: '6px', border: '1px solid var(--border-color)', outline: 'none', background: '#fff', cursor: 'pointer' }}
+                        >
+                          <option value="all">Filtrar por Equipo (Todos)</option>
+                          {uniqueEquipments.map(eq => (
+                            <option key={eq} value={eq}>{eq}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {filteredQuotes.length > 0 ? (
+                      <div className="admin-table-wrapper">
+                        <table className="admin-table">
+                          <thead>
+                            <tr>
+                              <th>Fecha</th>
+                              <th>Cliente / Institución</th>
+                              <th>Contacto</th>
+                              <th>Equipo de Interés</th>
+                              <th>Mensaje / Detalles</th>
+                              <th style={{ textAlign: 'center' }}>Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredQuotes.map((q) => {
+                              const date = new Date(q.created_at).toLocaleDateString('es-ES', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              });
+
+                              return (
+                                <tr key={q.id}>
+                                  <td style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>{date}</td>
+                                  <td>
+                                    <strong>{q.name}</strong>
+                                    {q.institution && (
+                                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>{q.institution}</p>
+                                    )}
+                                  </td>
+                                  <td>
+                                    <a href={`mailto:${q.email}`} style={{ fontSize: '0.85rem', color: 'var(--primary-color)', textDecoration: 'none', display: 'block', marginBottom: '0.15rem' }} title="Enviar Correo">{q.email}</a>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-color)', fontWeight: 500 }}>{q.phone}</span>
+                                  </td>
+                                  <td>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary-color)' }}>{q.equipment}</span>
+                                  </td>
+                                  <td style={{ maxWidth: '250px', fontSize: '0.85rem', whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                                    {q.message}
+                                  </td>
+                                  <td>
+                                    <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', alignItems: 'center' }}>
+                                      <a
+                                        href={`https://wa.me/${q.phone.replace(/[^0-9]/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ 
+                                          display: 'inline-flex', 
+                                          alignItems: 'center', 
+                                          justifyContent: 'center', 
+                                          width: '32px', 
+                                          height: '32px', 
+                                          borderRadius: '4px', 
+                                          backgroundColor: '#25D366', 
+                                          color: '#fff', 
+                                          textDecoration: 'none',
+                                          transition: 'all 0.2s',
+                                          boxShadow: '0 1px 3px rgba(37,211,102,0.2)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.backgroundColor = '#128C7E';
+                                          e.currentTarget.style.transform = 'translateY(-1px)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.backgroundColor = '#25D366';
+                                          e.currentTarget.style.transform = 'translateY(0)';
+                                        }}
+                                        title="Escribir por WhatsApp"
+                                      >
+                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
+                                          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.835-4.814l.41.244c1.472.873 3.125 1.333 4.818 1.335 5.867 0 10.643-4.774 10.647-10.647 0-2.846-1.107-5.522-3.117-7.533C17.632 1.636 14.958.53 12.112.53C6.248.53 1.472 5.305 1.468 11.18c-.001 1.76.459 3.479 1.333 4.974l.268.456-1.002 3.659 3.75-.983zM17.433 14.1c-.29-.145-1.716-.848-1.98-.943-.265-.096-.459-.145-.653.146-.193.29-.75.943-.919 1.137-.168.193-.338.217-.628.072-2.934-1.467-5.074-3.555-5.914-5.006-.222-.382-.023-.589.176-.788.178-.178.397-.463.595-.695.198-.232.265-.397.397-.662.132-.265.066-.497-.033-.692-.099-.196-.848-2.046-1.162-2.802-.307-.738-.617-.638-.847-.65-.22-.01-.471-.012-.723-.012-.251 0-.662.094-.99.463-.329.369-1.258 1.229-1.258 2.996 0 1.767 1.288 3.473 1.468 3.712.18.239 2.536 3.873 6.143 5.432.858.371 1.528.592 2.052.758.862.274 1.647.235 2.268.143.69-.103 1.717-.702 1.96-1.383.242-.682.242-1.266.17-1.383-.073-.117-.265-.19-.556-.335z"/>
+                                        </svg>
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() => onDeleteQuote(q.id)}
+                                        className="action-btn delete-action"
+                                        title="Eliminar registro"
+                                        style={{ border: 'none', width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px', margin: 0 }}
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-muted)' }}>
+                        {quotes.length > 0 
+                          ? 'Ninguna cotización coincide con los criterios de búsqueda.' 
+                          : 'No se han recibido solicitudes de cotización todavía.'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+              )}
             </motion.div>
           ) : (
             /* Product Editor Form */
@@ -404,7 +778,7 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label">Descripción Informativa *</label>
+                      <label className="form-label">Descripción Informativa (Español) *</label>
                       <textarea
                         name="description"
                         value={editingProduct.description}
@@ -412,6 +786,17 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
                         placeholder="Ej. Monitor multiparámetrico de alta fidelidad para cuidados..."
                         rows={3}
                         required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Descripción Informativa (Inglés)</label>
+                      <textarea
+                        name="description_en"
+                        value={editingProduct.description_en || ''}
+                        onChange={handleFormChange}
+                        placeholder="Se autogenera al guardar si se deja vacío, o escríbalo manualmente..."
+                        rows={3}
                       />
                     </div>
 
@@ -557,9 +942,18 @@ export default function AdminPanel({ products, onSaveProduct, onDeleteProduct, o
                 </div>
 
                 <div className="form-submit-container" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
-                  <button type="submit" className="btn btn-primary save-btn-admin">
-                    <Save size={18} />
-                    Guardar Cambios del Artículo
+                  <button type="submit" className="btn btn-primary save-btn-admin" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <div className="loading-spinner" style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite', marginRight: '8px', display: 'inline-block' }} />
+                        Guardando y traduciendo...
+                      </>
+                    ) : (
+                      <>
+                        <Save size={18} />
+                        Guardar Cambios del Artículo
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
